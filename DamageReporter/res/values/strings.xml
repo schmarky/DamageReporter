@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">DamageReporter</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="startpause">Start/Pause</string>
+    <string name="reset">Reset</string>
+    <string name="dmg_rep_interval">Damage Report Interval</string>
+    <string name="game_length">Game Length</string>
+
+</resources>
