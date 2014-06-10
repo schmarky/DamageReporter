@@ -28,15 +28,20 @@ public class Settings extends Activity implements  NumberPicker.OnValueChangeLis
     
     npGameMinInd = (NumberPicker) findViewById(R.id.npGameMinInd);
     npGameTenInd = (NumberPicker) findViewById(R.id.npGameTenInd);
-    npRepMinutes = (NumberPicker) findViewById(R.id.npRepMinutes);
+    //npRepMinutes = (NumberPicker) findViewById(R.id.npRepMinutes);
     
+    npGameTenInd.setMinValue(0);
+    npGameTenInd.setMaxValue(4);  
     npGameTenInd.setValue(4);
+    
+    npGameMinInd.setMinValue(0);
+    npGameMinInd.setMaxValue(9);  
     npGameMinInd.setValue(5);
-    npRepMinutes.setValue(3);
+    //npRepMinutes.setValue(3);
     
     npGameTenInd.setOnValueChangedListener(this);
     npGameMinInd.setOnValueChangedListener(this);
-    npRepMinutes.setOnValueChangedListener(this);
+    //npRepMinutes.setOnValueChangedListener(this);
   }
 
   @Override
