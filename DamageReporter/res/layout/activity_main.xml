@@ -12,29 +12,36 @@
         android:id="@+id/cmTimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="0dp"
+        android:layout_marginBottom="50dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="#ffffff"
-        android:textSize="80sp" />
+        android:textSize="90sp" />
+
+    <TextView
+        android:id="@+id/tvGameLength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="45:00"
+        android:textColor="#ffffff" />
 
     <Button
         android:id="@+id/bStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
-        android:textColor="#ffffff"
-        android:text="@string/startpause" />
+        android:text="@string/startpause"
+        android:textColor="#ffffff" />
 
-    <Button 
+    <Button
         android:id="@+id/bReset"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
-        android:textColor="#ffffff"
-        android:text="@string/reset" />
+        android:layout_marginTop="5dp"
+        android:text="@string/reset"
+        android:textColor="#ffffff" />
 
 </LinearLayout>

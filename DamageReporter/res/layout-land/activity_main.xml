@@ -4,7 +4,6 @@
     android:layout_height="fill_parent"
     android:layout_centerHorizontal="true"
     android:background="@drawable/nebula_land"
-    android:gravity="center"
     android:keepScreenOn="true"
     android:orientation="vertical" >
 
@@ -12,10 +11,21 @@
         android:id="@+id/cmTimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="0dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="15dp"
+        android:layout_marginTop="15dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="#ffffff"
         android:textSize="100sp" />
+
+    <TextView
+        android:id="@+id/tvGameLength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="5dp"
+        android:text="45:00"
+        android:textColor="#ffffff" />
 
     <LinearLayout
         android:layout_width="match_parent"

@@ -14,6 +14,9 @@ public class Settings extends Activity implements  NumberPicker.OnValueChangeLis
   NumberPicker npGameMinInd;
   NumberPicker npRepMinutes;
   
+  String[] minuteValues = {"0","1","2","3","4","5","6","7","8","9"};
+  String[] tenValues = {"0","1","2","3","4"};
+  
   /* (non-Javadoc)
    * @see android.app.Activity#onCreate(android.os.Bundle)
    */
@@ -24,19 +27,26 @@ public class Settings extends Activity implements  NumberPicker.OnValueChangeLis
     
     setContentView(R.layout.settings);
     
-    Log.e("LOG_TAG", "onCreate()");
-    
+    Log.e("LOG_TAG", "Number Picker onCreate()");
+
     npGameMinInd = (NumberPicker) findViewById(R.id.npGameMinInd);
     npGameTenInd = (NumberPicker) findViewById(R.id.npGameTenInd);
     //npRepMinutes = (NumberPicker) findViewById(R.id.npRepMinutes);
     
+    //npGameTenInd.setMaxValue(tenValues.length-1);
+    npGameTenInd.setMaxValue(4);
     npGameTenInd.setMinValue(0);
-    npGameTenInd.setMaxValue(4);  
-    npGameTenInd.setValue(4);
+    npGameTenInd.setWrapSelectorWheel(true);
+    //npGameMinInd.setDisplayedValues(tenValues);
+    //npGameTenInd.setValue(4);
     
+    //npGameMinInd.setMaxValue(minuteValues.length-1);
+    npGameMinInd.setMaxValue(9);
     npGameMinInd.setMinValue(0);
-    npGameMinInd.setMaxValue(9);  
-    npGameMinInd.setValue(5);
+    npGameMinInd.setWrapSelectorWheel(true);
+    //npGameMinInd.setDisplayedValues(minuteValues);
+    //npGameMinInd.setValue(5);
+    
     //npRepMinutes.setValue(3);
     
     npGameTenInd.setOnValueChangedListener(this);
@@ -58,10 +68,6 @@ public class Settings extends Activity implements  NumberPicker.OnValueChangeLis
     case R.id.npGameTenInd:
       Log.e("LOG_TAG", "npGameTenInd");
       break;
-    case R.id.npRepMinutes:
-      Log.e("LOG_TAG", "npRepMinutes");
-      break;
-
     default:
       break;
     }

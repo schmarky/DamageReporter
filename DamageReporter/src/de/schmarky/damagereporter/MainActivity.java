@@ -6,53 +6,77 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.util.Log;
-import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
-import android.support.v4.app.DialogFragment;
+import android.widget.NumberPicker;
+import android.widget.TextView;
 
+/**
+ * @author schmarky schmarky@gmail.com
+ * @version     1.0
+ * @since       2014-06-10
+ */
 public class MainActivity extends Activity implements View.OnClickListener,
-    Chronometer.OnChronometerTickListener {
-
-  private static final String TIMER_PAUSED_TIME = "PausedTime";
+    Chronometer.OnChronometerTickListener, DialogInterface.OnClickListener {
+ 
   // constants
+  private static final String TIMER_PAUSED_TIME = "PausedTime";
   private static final String TIME_DISP_STR = "TimeDispStr";
+  private static final String GAME_LENGTH_TIME = "GameLengthTime";
   private static final String TIMER_BASE_TIME = "base";
   private static final String LOG_TAG = "Damage_Reporter";
   private static final String FILE_NAME = "MySharedPrefs";
+  private static final int DAMAGE_REPORT_DEFAULT_LENGTH = 3;
+  private static final int GAME_DEFAULT_LENGTH = 45;
 
   // globals
   boolean isTimerReset = true;
   boolean isTimerRunning = false;
 
-  int dmgReport = 0;
+  int dmgReportLength = DAMAGE_REPORT_DEFAULT_LENGTH;
+  int gameLength = GAME_DEFAULT_LENGTH;
+  int sndDmgReport = 0;
+  int sndGameOver = 0;
   long pausedTime = 0L;
   long baseTime = 0L;
+  
+  // global objects
   String chronoText;
-
   SharedPreferences someData;
   Button bStart, bReset;
   Chronometer cmTimer;
   SoundPool spSounds;
+  TextView tvGameLength;
+  
+  // Settings Objects
+  NumberPicker npGameTenInd;
+  NumberPicker npGameMinInd;
+  NumberPicker npRepMinutes;
 
+  /**
+   * Initialize the Activity
+   * <p>
+   * Find all components, load sounds and set listeners
+   */
   private void init() {
     setContentView(R.layout.activity_main);
 
     cmTimer = (Chronometer) findViewById(R.id.cmTimer);
     bStart = (Button) findViewById(R.id.bStart);
     bReset = (Button) findViewById(R.id.bReset);
+    tvGameLength = (TextView) findViewById(R.id.tvGameLength);
     spSounds = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
-    dmgReport = spSounds.load(this, R.raw.damagereport, 1);
+    sndDmgReport = spSounds.load(this, R.raw.damagereport, 1);
+    sndGameOver = spSounds.load(this, R.raw.gameover, 1);
     someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
 
     // start button
@@ -61,50 +85,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     bReset.setOnClickListener(this);
     // timer display
     cmTimer.setOnChronometerTickListener(this);
-  }
-
-  @Override
-  public void onChronometerTick(Chronometer chronometer) {
-    Integer minutes, seconds;
-    String array[];
-
-    chronoText = cmTimer.getText().toString();
-    array = chronoText.split(":");
-    // Log.e(LOG_TAG, "arra0: "+array[0]);
-    // Log.e(LOG_TAG, "arra1: "+array[1]);
-    minutes = Integer.parseInt(array[0]);
-    seconds = Integer.parseInt(array[1]);
-
-    if ((minutes % 3) == 0 & (seconds == 0) & minutes != 0) {
-      // play damage report sound + maybe screen flash
-      if (dmgReport != 0) {
-        spSounds.play(dmgReport, 1, 1, 0, 0, 1);
-      }
-      // Toast.makeText(getApplicationContext(),
-      // "3 Minute timer",Toast.LENGTH_SHORT).show();
-      Log.e(LOG_TAG, "3 minute timer");
-
-    } else if (minutes == 45) {
-      // play time is up sound + game over graphic
-      isTimerRunning = false;
-      isTimerReset = true;
-      cmTimer.stop();
-      cmTimer.setText("00:00");
-      Log.e(LOG_TAG, "45 minute timer");
-    }
-  }
-
-  @Override
-  public void onClick(View view) {
-    // TODO Auto-generated method stub
-    switch (view.getId()) {
-    case R.id.bStart:
-      toggleTimer();
-      break;
-    case R.id.bReset:
-      resetTimer();
-      break;
-    }
+    // Game Length TextView
+    tvGameLength.setOnClickListener(this);
   }
 
   public void resetTimer() {
@@ -153,84 +135,219 @@ public class MainActivity extends Activity implements View.OnClickListener,
       isTimerRunning = true;
       pausedTime = 0L;
       baseTime = 0L;
+      //gameOver = GAME_LENGTH;
       // return;
     }
   }
 
   private void setTimerFromSharedPrefs() {
     String Time;
+    Log.e(LOG_TAG, "setTimerFromSharedPrefs");
     // get shared prefs
-    someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
+    // someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
     // get the saved time string
-    Time = someData.getString(TIME_DISP_STR, "#na");
-    Log.e(LOG_TAG, "TimeStr: " + Time);
-
-    // only load when there is something to load
-    if (Time != "#na") {
-      // fill globals from shared prefs
-      pausedTime = someData.getLong(TIMER_PAUSED_TIME, 0);
-      baseTime = someData.getLong(TIMER_BASE_TIME, 0);
-      cmTimer.setText(Time);
-      Log.e(LOG_TAG, "base: " + baseTime);
-      Log.e(LOG_TAG, "pause: " + pausedTime);
-      Log.e(LOG_TAG, "TimeStr: " + Time);
+    
+    //game length 
+    if (someData.contains(GAME_LENGTH_TIME)) {
+      setGameLength(someData.getInt(GAME_LENGTH_TIME, GAME_DEFAULT_LENGTH));
+      Log.e(LOG_TAG, "gameLength: " + getGameLength());
     }
+    // current time
+    if (someData.contains(TIME_DISP_STR)) {
+      Time = someData.getString(TIME_DISP_STR, "00:00");
+      Log.e(LOG_TAG, "TimeStr: " + Time);
+      cmTimer.setText(Time);
+    }
+    // fill globals from shared prefs
+    if (someData.contains(TIMER_PAUSED_TIME)) {
+      pausedTime = someData.getLong(TIMER_PAUSED_TIME, 0);
+      Log.e(LOG_TAG, "pause: " + pausedTime);
+    }
+
+    if (someData.contains(TIMER_BASE_TIME)) {
+      baseTime = someData.getLong(TIMER_BASE_TIME, 0);
+      Log.e(LOG_TAG, "base: " + baseTime);
+    }
+    // clear after data has been retrieved
+    clearSharedPrefs();
   }
 
   private void setTimerToSharedPrefs() {
+    Long pTime;
+    Long bTime;
+
     // logging
+    Log.e(LOG_TAG, "setTimerToSharedPrefs");
     Log.e(LOG_TAG, "base Time: " + cmTimer.getBase());
     Log.e(LOG_TAG, "Paused Time: " + pausedTime);
     Log.e(LOG_TAG, "TimeString: " + cmTimer.getText().toString());
 
-    // stop running timer
-    if (isTimerRunning) {
-      isTimerRunning = false;
-      cmTimer.stop();
+    // get shared prefs
+    SharedPreferences.Editor editor = someData.edit();    
+   
+    //game length 
+    if (!someData.contains(GAME_LENGTH_TIME)) {
+      Log.e(LOG_TAG, "put gameover time:"+ getGameLength());
+      editor.putInt(GAME_LENGTH_TIME, getGameLength());
     }
-
     // only save when there is something to save - timer was not reset
     if (!isTimerReset) {
+
+      // stop running timer
+      if (isTimerRunning) {
+        isTimerRunning = false;
+        cmTimer.stop();
+      }
+
+      // get the saved time string
+      if (!someData.contains(TIME_DISP_STR)) {
+        editor.putString(TIME_DISP_STR, cmTimer.getText().toString());
+      }
+
+      // if base was already set save this one
+      if (baseTime != 0L) {
+        bTime = baseTime;
+      } else {
+        bTime = cmTimer.getBase();
+      }
+
       // save globals to shared prefs
-      SharedPreferences.Editor editor = someData.edit();
-      editor.putString(TIME_DISP_STR, cmTimer.getText().toString());
-      editor.putLong(TIMER_BASE_TIME, cmTimer.getBase());
+      if (!someData.contains(TIMER_BASE_TIME)) {
+        editor.putLong(TIMER_BASE_TIME, bTime);
+      }
 
       // is the timer currently paused
       if (pausedTime != 0L) {
         Log.e(LOG_TAG, "put pause time");
-        editor.putLong(TIMER_PAUSED_TIME, pausedTime);
+        pTime = pausedTime;
       } else { // or not
         Log.e(LOG_TAG, "put elapsedRealtime");
-        editor.putLong(TIMER_PAUSED_TIME, SystemClock.elapsedRealtime());
+        pTime = SystemClock.elapsedRealtime();
       }
-      editor.commit();
+
+      // fill globals from shared prefs
+      if (!someData.contains(TIMER_PAUSED_TIME)) {
+        editor.putLong(TIMER_PAUSED_TIME, pTime);
+      }
+
     }
+    editor.commit();
   }
 
   private void clearSharedPrefs() {
+    Log.e(LOG_TAG, "clearSharedPrefs");
     // clean up shared preferences
     SharedPreferences.Editor editor = someData.edit();
     editor.clear();
     editor.commit();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * android.app.Activity#onConfigurationChanged(android.content.res.Configuration
-   * )
-   */
+  protected void initNumberPicker(View promptsView) {
+
+    Log.e("LOG_TAG", "initNumberPicker()");
+
+    npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
+    npGameTenInd = (NumberPicker) promptsView.findViewById(R.id.npGameTenInd);
+
+    npGameTenInd.setMaxValue(4);
+    npGameTenInd.setMinValue(0);
+    npGameTenInd.setWrapSelectorWheel(true);
+     
+    npGameTenInd.setValue(getGameLength()/10);
+
+    npGameMinInd.setMaxValue(9);
+    npGameMinInd.setMinValue(0);
+    npGameMinInd.setWrapSelectorWheel(true);
+    npGameMinInd.setValue(5);
+  }
+
+  private void initSettingsDialog() {
+    LayoutInflater inflater = (LayoutInflater) this
+        .getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
+
+    View promptsView = inflater.inflate(R.layout.settings, null);
+
+    AlertDialog alert = new AlertDialog.Builder(MainActivity.this).create();
+
+    initNumberPicker(promptsView);
+
+    // set prompts.xml to alertdialog builder
+    alert.setView(promptsView);
+    alert.setTitle("Set Game length");
+    alert.setButton(AlertDialog.BUTTON_POSITIVE, "OK", this);
+    alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", this);
+    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Defaults", this);
+    alert.show();
+  }
+
   @Override
-  public void onConfigurationChanged(Configuration newConfig) {
-    setTimerToSharedPrefs();
-    setContentView(R.layout.activity_main);
-    init();
-    setTimerFromSharedPrefs();
-    toggleTimer();
-    super.onConfigurationChanged(newConfig);
-    Log.e(LOG_TAG, "onConfigurationChanged()");
+  public void onClick(View view) {
+    switch (view.getId()) {
+    case R.id.bStart:
+      toggleTimer();
+      break;
+    case R.id.bReset:
+      resetTimer();
+      break;
+    case R.id.tvGameLength:
+      initSettingsDialog();
+      break;
+    }
+  }
+
+  @Override
+  public void onClick(DialogInterface dialog, int which) {
+    switch (which) {
+    case AlertDialog.BUTTON_NEUTRAL:
+      // set game length to default(45min) and close the settings dialog
+      setGameLength(GAME_DEFAULT_LENGTH);
+      break;
+    case AlertDialog.BUTTON_NEGATIVE:
+      // do nothing and close the settings dialog
+      break;
+    case AlertDialog.BUTTON_POSITIVE:
+      int newVal;
+      // get the values from the number picker
+      newVal = (npGameTenInd.getValue() * 10) + npGameMinInd.getValue();
+      Log.e(LOG_TAG, "newVal: " + newVal);
+      // set the game length and close the settings dialog
+      setGameLength(newVal);
+      break;
+    }
+  }
+
+  @Override
+  public void onChronometerTick(Chronometer chronometer) {
+    int minutes, seconds;
+    String array[];
+
+    chronoText = chronometer.getText().toString();
+    array = chronoText.split(":");
+    // Log.e(LOG_TAG, "arra0: "+array[0]);
+    // Log.e(LOG_TAG, "arra1: "+array[1]);
+    minutes = Integer.parseInt(array[0]);
+    seconds = Integer.parseInt(array[1]);
+
+    if ((minutes % dmgReportLength) == 0 & (seconds == 0) & minutes != 0) {
+      // play damage report sound + maybe screen flash
+      if (sndDmgReport != 0) {
+        spSounds.play(sndDmgReport, 1, 1, 0, 0, 1);
+      }
+      // Toast.makeText(getApplicationContext(),
+      // "3 Minute timer",Toast.LENGTH_SHORT).show();
+      Log.e(LOG_TAG, "3 minute timer");
+
+    } else if (minutes == getGameLength()) {
+      // play time is up sound + game over graphic
+      if (sndGameOver != 0) {
+        spSounds.play(sndGameOver, 1, 1, 0, 0, 1);
+      }
+      isTimerRunning = false;
+      isTimerReset = true;
+      cmTimer.stop();
+      cmTimer.setText("00:00");
+      Log.e(LOG_TAG, "45 minute timer");
+    }
   }
 
   // options menu
@@ -255,81 +372,44 @@ public class MainActivity extends Activity implements View.OnClickListener,
       startActivity(i);
       return true;
     case R.id.action_settings:
-
-      LayoutInflater inflater = (LayoutInflater) this
-          .getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
-
-      View promptsView = inflater.inflate(R.layout.settings, null);
-
-      AlertDialog alert = new AlertDialog.Builder(MainActivity.this).create();
-
-      // set prompts.xml to alertdialog builder
-      alert.setView(promptsView);
-
-      alert.setTitle("Set Game length");
-      // alert.setMessage("Minutes:");
-      alert.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
-          new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-              // TODO Auto-generated method stub
-
-            }
-          });
-
-      alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel",
-          new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-              // TODO Auto-generated method stub
-
-            }
-          });
-      alert.show();
-      /*
-       * // get prompts.xml view LayoutInflater li = LayoutInflater.from(this);
-       * View promptsView = li.inflate(R.layout.settings, null);
-       * 
-       * AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder( new
-       * ContextThemeWrapper(this, R.style.AppBaseTheme)); //AlertDialog.Builder
-       * alertDialogBuilder = new AlertDialog.Builder(this);
-       * 
-       * 
-       * // set prompts.xml to alertdialog builder
-       * alertDialogBuilder.setView(promptsView);
-       * 
-       * 
-       * // set dialog message
-       * alertDialogBuilder.setCancelable(false).setPositiveButton("OK", new
-       * DialogInterface.OnClickListener() { public void onClick(DialogInterface
-       * dialog,int id) { // get user input and set it to result } })
-       * .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-       * public void onClick(DialogInterface dialog,int id) { dialog.cancel(); }
-       * });
-       * 
-       * // create alert dialog AlertDialog alertDialog =
-       * alertDialogBuilder.create();
-       * 
-       * // show it alertDialog.show();
-       */
-
-      /*
-       * Dialog dlgSettings = new Dialog(this);
-       * dlgSettings.setContentView(R.layout.settings);
-       * dlgSettings.setTitle("Settings"); dlgSettings.show();
-       */
-
-      /*
-       * Intent settings = new Intent("de.schmarky.damagereporter.SETTINGS");
-       * startActivity(settings);
-       */
+      initSettingsDialog();
       return true;
     default:
       return super.onOptionsItemSelected(item);
     }
+  }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * android.app.Activity#onConfigurationChanged(android.content.res.Configuration
+   * )
+   */
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    Boolean isRunning = isTimerRunning;
+
+    // save data if timer is running
+    //if (!isTimerReset) {
+      setTimerToSharedPrefs();
+    //}
+    // set new layout and init vars
+    setContentView(R.layout.activity_main);
+    init();
+
+    // load data if timer was running
+    //if (!isTimerReset) {
+      setTimerFromSharedPrefs();
+    //}
+
+    // start timer if it was running
+    if (isRunning) {
+      toggleTimer();
+    }
+
+    super.onConfigurationChanged(newConfig);
+    Log.e(LOG_TAG, "onConfigurationChanged()");
   }
 
   /*
@@ -417,4 +497,24 @@ public class MainActivity extends Activity implements View.OnClickListener,
     Log.e(LOG_TAG, "onStop");
   }
 
+  /*
+   * Getter Setter Region
+   */
+  
+  
+  /**
+   * @return the gameLength
+   */
+  public int getGameLength() {
+    return gameLength;
+  }
+
+  /**
+   * @param gameLength the gameLength to set
+   */
+  protected void setGameLength(int gameLength) {
+    this.gameLength = gameLength;
+    this.tvGameLength.setText(gameLength +":00");
+  }
+  
 }
