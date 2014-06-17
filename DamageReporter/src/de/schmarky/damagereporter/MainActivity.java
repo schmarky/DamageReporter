@@ -4,6 +4,7 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.Vibrator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -22,12 +23,12 @@ import android.widget.TextView;
 
 /**
  * @author schmarky schmarky@gmail.com
- * @version     1.0
- * @since       2014-06-10
+ * @version 1.0
+ * @since 2014-06-10
  */
 public class MainActivity extends Activity implements View.OnClickListener,
     Chronometer.OnChronometerTickListener, DialogInterface.OnClickListener {
- 
+
   // constants
   private static final String TIMER_PAUSED_TIME = "PausedTime";
   private static final String TIME_DISP_STR = "TimeDispStr";
@@ -37,6 +38,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   private static final String FILE_NAME = "MySharedPrefs";
   private static final int DAMAGE_REPORT_DEFAULT_LENGTH = 3;
   private static final int GAME_DEFAULT_LENGTH = 45;
+  private static final long VIBRATE_DURATION = 1000;
 
   // globals
   boolean isTimerReset = true;
@@ -48,7 +50,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   int sndGameOver = 0;
   long pausedTime = 0L;
   long baseTime = 0L;
-  
+
   // global objects
   String chronoText;
   SharedPreferences someData;
@@ -56,11 +58,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
   Chronometer cmTimer;
   SoundPool spSounds;
   TextView tvGameLength;
+  Vibrator vib;
+  AlertDialog alert;
   
   // Settings Objects
   NumberPicker npGameTenInd;
   NumberPicker npGameMinInd;
-  NumberPicker npRepMinutes;
+  //NumberPicker npRepMinutes;
 
   /**
    * Initialize the Activity
@@ -78,7 +82,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     sndDmgReport = spSounds.load(this, R.raw.damagereport, 1);
     sndGameOver = spSounds.load(this, R.raw.gameover, 1);
     someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
-
+    vib = (Vibrator) getSystemService(VIBRATOR_SERVICE); 
+    
     // start button
     bStart.setOnClickListener(this);
     // reset button
@@ -117,9 +122,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
     // pause click
     else if (isTimerRunning) {
-      isTimerRunning = false;
-      cmTimer.stop();
-      pausedTime = SystemClock.elapsedRealtime();
+      pauseTimer();
     }
     // start timer after a resume
     else if (pausedTime != 0L && !isTimerRunning) {
@@ -137,19 +140,27 @@ public class MainActivity extends Activity implements View.OnClickListener,
       isTimerRunning = true;
       pausedTime = 0L;
       baseTime = 0L;
-      //gameOver = GAME_LENGTH;
+      // gameOver = GAME_LENGTH;
       // return;
     }
   }
 
+  void pauseTimer(){
+    if (isTimerRunning){
+      isTimerRunning = false;
+      cmTimer.stop();
+      pausedTime = SystemClock.elapsedRealtime();  
+    }
+  }
+  
   private void setTimerFromSharedPrefs() {
     String Time;
     Log.e(LOG_TAG, "setTimerFromSharedPrefs");
     // get shared prefs
     // someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
     // get the saved time string
-    
-    //game length 
+
+    // game length
     if (someData.contains(GAME_LENGTH_TIME)) {
       setGameLength(someData.getInt(GAME_LENGTH_TIME, GAME_DEFAULT_LENGTH));
       Log.e(LOG_TAG, "gameLength: " + getGameLength());
@@ -185,11 +196,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     Log.e(LOG_TAG, "TimeString: " + cmTimer.getText().toString());
 
     // get shared prefs
-    SharedPreferences.Editor editor = someData.edit();    
-   
-    //game length 
+    SharedPreferences.Editor editor = someData.edit();
+
+    // game length
     if (!someData.contains(GAME_LENGTH_TIME)) {
-      Log.e(LOG_TAG, "put gameover time:"+ getGameLength());
+      Log.e(LOG_TAG, "put gameover time:" + getGameLength());
       editor.putInt(GAME_LENGTH_TIME, getGameLength());
     }
     // only save when there is something to save - timer was not reset
@@ -245,7 +256,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
   }
 
   protected void initNumberPicker(View promptsView) {
-
+    String gL; 
+    int digit;
     Log.e("LOG_TAG", "initNumberPicker()");
 
     npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
@@ -254,13 +266,21 @@ public class MainActivity extends Activity implements View.OnClickListener,
     npGameTenInd.setMaxValue(4);
     npGameTenInd.setMinValue(0);
     npGameTenInd.setWrapSelectorWheel(true);
-     
-    npGameTenInd.setValue(getGameLength()/10);
+
+    npGameTenInd.setValue(getGameLength() / 10);
 
     npGameMinInd.setMaxValue(9);
     npGameMinInd.setMinValue(0);
     npGameMinInd.setWrapSelectorWheel(true);
-    npGameMinInd.setValue(5);
+    
+    // get the minutes
+    gL = Integer.toString(getGameLength());    
+    if (gL.length()> 1){
+      digit = Integer.parseInt(gL.substring(1));
+    } else{
+      digit = Integer.parseInt(gL);
+    }
+    npGameMinInd.setValue(digit);
   }
 
   private void initSettingsDialog() {
@@ -269,7 +289,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     View promptsView = inflater.inflate(R.layout.settings, null);
 
-    AlertDialog alert = new AlertDialog.Builder(MainActivity.this).create();
+    alert = new AlertDialog.Builder(MainActivity.this).create();
 
     initNumberPicker(promptsView);
 
@@ -292,7 +312,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
       resetTimer();
       break;
     case R.id.tvGameLength:
-      toggleTimer();
+      pauseTimer();
       initSettingsDialog();
       break;
     }
@@ -345,6 +365,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
       if (sndGameOver != 0) {
         spSounds.play(sndGameOver, 1, 1, 0, 0, 1);
       }
+      
+      if (vib != null) {
+        vib.vibrate(VIBRATE_DURATION);  
+      }
       isTimerRunning = false;
       isTimerReset = true;
       cmTimer.stop();
@@ -375,7 +399,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
       startActivity(i);
       return true;
     case R.id.action_settings:
-      toggleTimer();
+      pauseTimer();
       initSettingsDialog();
       return true;
     default:
@@ -395,17 +419,17 @@ public class MainActivity extends Activity implements View.OnClickListener,
     Boolean isRunning = isTimerRunning;
 
     // save data if timer is running
-    //if (!isTimerReset) {
-      setTimerToSharedPrefs();
-    //}
+    // if (!isTimerReset) {
+    setTimerToSharedPrefs();
+    // }
     // set new layout and init vars
     setContentView(R.layout.activity_main);
     init();
 
     // load data if timer was running
-    //if (!isTimerReset) {
-      setTimerFromSharedPrefs();
-    //}
+    // if (!isTimerReset) {
+    setTimerFromSharedPrefs();
+    // }
 
     // start timer if it was running
     if (isRunning) {
@@ -505,8 +529,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   /*
    * Getter Setter Region
    */
-  
-  
+
   /**
    * @return the gameLength
    */
@@ -515,11 +538,24 @@ public class MainActivity extends Activity implements View.OnClickListener,
   }
 
   /**
-   * @param gameLength the gameLength to set
+   * @param gameLength
+   *          the gameLength to set
    */
   protected void setGameLength(int gameLength) {
     this.gameLength = gameLength;
-    this.tvGameLength.setText(gameLength +":00");
+    this.tvGameLength.setText(gameLength + ":00");
   }
-  
+/*
+  @Override
+  public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+    Log.e(LOG_TAG, "ten: "+npGameTenInd.getValue());
+    Log.e(LOG_TAG, "min: " +npGameMinInd.getValue());
+    if(npGameTenInd.getValue() == 0 && npGameMinInd.getValue() == 0){
+      alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);  
+    } else if (!alert.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled() ){
+      alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);  
+    }
+    
+  }*/
+
 }
