@@ -87,6 +87,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     cmTimer.setOnChronometerTickListener(this);
     // Game Length TextView
     tvGameLength.setOnClickListener(this);
+    // make volume buttons work
+    setVolumeControlStream(AudioManager.STREAM_MUSIC);
   }
 
   public void resetTimer() {
@@ -290,6 +292,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
       resetTimer();
       break;
     case R.id.tvGameLength:
+      toggleTimer();
       initSettingsDialog();
       break;
     }
@@ -372,6 +375,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
       startActivity(i);
       return true;
     case R.id.action_settings:
+      toggleTimer();
       initSettingsDialog();
       return true;
     default:
@@ -459,6 +463,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     super.onDestroy();
     Log.e(LOG_TAG, "onDestroy");
     clearSharedPrefs();
+    setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE);
   }
 
   /*
