@@ -17,6 +17,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.Chronometer;
 import android.widget.NumberPicker;
 import android.widget.TextView;
@@ -27,12 +28,14 @@ import android.widget.TextView;
  * @since 2014-06-10
  */
 public class MainActivity extends Activity implements View.OnClickListener,
-    Chronometer.OnChronometerTickListener, DialogInterface.OnClickListener {
+    Chronometer.OnChronometerTickListener, DialogInterface.OnClickListener,
+    NumberPicker.OnScrollListener {
 
   // constants
   private static final String TIMER_PAUSED_TIME = "PausedTime";
   private static final String TIME_DISP_STR = "TimeDispStr";
   private static final String GAME_LENGTH_TIME = "GameLengthTime";
+  private static final String VIBRATOR_STATE = "VibratorState";
   private static final String TIMER_BASE_TIME = "base";
   private static final String LOG_TAG = "Damage_Reporter";
   private static final String FILE_NAME = "MySharedPrefs";
@@ -43,6 +46,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   // globals
   boolean isTimerReset = true;
   boolean isTimerRunning = false;
+  boolean isVibratorOn = true;
 
   int dmgReportLength = DAMAGE_REPORT_DEFAULT_LENGTH;
   int gameLength = GAME_DEFAULT_LENGTH;
@@ -60,11 +64,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
   TextView tvGameLength;
   Vibrator vib;
   AlertDialog alert;
-  
+  CheckBox cbVibrate;
+
   // Settings Objects
   NumberPicker npGameTenInd;
   NumberPicker npGameMinInd;
-  //NumberPicker npRepMinutes;
+
+  // NumberPicker npRepMinutes;
 
   /**
    * Initialize the Activity
@@ -82,8 +88,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
     sndDmgReport = spSounds.load(this, R.raw.damagereport, 1);
     sndGameOver = spSounds.load(this, R.raw.gameover, 1);
     someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
-    vib = (Vibrator) getSystemService(VIBRATOR_SERVICE); 
-    
+    vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+
     // start button
     bStart.setOnClickListener(this);
     // reset button
@@ -145,14 +151,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
   }
 
-  void pauseTimer(){
-    if (isTimerRunning){
+  void pauseTimer() {
+    if (isTimerRunning) {
       isTimerRunning = false;
       cmTimer.stop();
-      pausedTime = SystemClock.elapsedRealtime();  
+      pausedTime = SystemClock.elapsedRealtime();
     }
   }
-  
+
   private void setTimerFromSharedPrefs() {
     String Time;
     Log.e(LOG_TAG, "setTimerFromSharedPrefs");
@@ -165,6 +171,13 @@ public class MainActivity extends Activity implements View.OnClickListener,
       setGameLength(someData.getInt(GAME_LENGTH_TIME, GAME_DEFAULT_LENGTH));
       Log.e(LOG_TAG, "gameLength: " + getGameLength());
     }
+    
+    // vibrator setting
+    if (someData.contains(VIBRATOR_STATE)) {
+      isVibratorOn = someData.getBoolean(VIBRATOR_STATE, true);
+      Log.e(LOG_TAG, "get vibrator state:" + isVibratorOn);
+    }
+    
     // current time
     if (someData.contains(TIME_DISP_STR)) {
       Time = someData.getString(TIME_DISP_STR, "00:00");
@@ -203,6 +216,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
       Log.e(LOG_TAG, "put gameover time:" + getGameLength());
       editor.putInt(GAME_LENGTH_TIME, getGameLength());
     }
+    
+    // vibrator setting
+    if (!someData.contains(VIBRATOR_STATE)) {
+      Log.e(LOG_TAG, "put vibrator state:" + isVibratorOn);
+      editor.putBoolean(VIBRATOR_STATE, isVibratorOn);
+    }
+    
+    
     // only save when there is something to save - timer was not reset
     if (!isTimerReset) {
 
@@ -256,28 +277,29 @@ public class MainActivity extends Activity implements View.OnClickListener,
   }
 
   protected void initNumberPicker(View promptsView) {
-    String gL; 
+    String gL;
     int digit;
     Log.e("LOG_TAG", "initNumberPicker()");
 
-    npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
     npGameTenInd = (NumberPicker) promptsView.findViewById(R.id.npGameTenInd);
+    npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
 
+    npGameTenInd.setOnScrollListener(this);
     npGameTenInd.setMaxValue(4);
     npGameTenInd.setMinValue(0);
     npGameTenInd.setWrapSelectorWheel(true);
-
     npGameTenInd.setValue(getGameLength() / 10);
 
+    npGameMinInd.setOnScrollListener(this);
     npGameMinInd.setMaxValue(9);
     npGameMinInd.setMinValue(0);
     npGameMinInd.setWrapSelectorWheel(true);
-    
+
     // get the minutes
-    gL = Integer.toString(getGameLength());    
-    if (gL.length()> 1){
+    gL = Integer.toString(getGameLength());
+    if (gL.length() > 1) {
       digit = Integer.parseInt(gL.substring(1));
-    } else{
+    } else {
       digit = Integer.parseInt(gL);
     }
     npGameMinInd.setValue(digit);
@@ -292,6 +314,9 @@ public class MainActivity extends Activity implements View.OnClickListener,
     alert = new AlertDialog.Builder(MainActivity.this).create();
 
     initNumberPicker(promptsView);
+
+    cbVibrate = (CheckBox) promptsView.findViewById(R.id.cbVibrate);
+    cbVibrate.setChecked(isVibratorOn);
 
     // set prompts.xml to alertdialog builder
     alert.setView(promptsView);
@@ -324,6 +349,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     case AlertDialog.BUTTON_NEUTRAL:
       // set game length to default(45min) and close the settings dialog
       setGameLength(GAME_DEFAULT_LENGTH);
+      isVibratorOn = true;
       break;
     case AlertDialog.BUTTON_NEGATIVE:
       // do nothing and close the settings dialog
@@ -335,6 +361,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
       Log.e(LOG_TAG, "newVal: " + newVal);
       // set the game length and close the settings dialog
       setGameLength(newVal);
+      if (cbVibrate.isChecked()) {
+        isVibratorOn = true;
+      } else {
+        isVibratorOn = false;
+      }
+
       break;
     }
   }
@@ -356,6 +388,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
       if (sndDmgReport != 0) {
         spSounds.play(sndDmgReport, 1, 1, 0, 0, 1);
       }
+
+      if (vib != null && isVibratorOn) {
+        vib.vibrate(VIBRATE_DURATION);
+      }
       // Toast.makeText(getApplicationContext(),
       // "3 Minute timer",Toast.LENGTH_SHORT).show();
       Log.e(LOG_TAG, "3 minute timer");
@@ -365,15 +401,27 @@ public class MainActivity extends Activity implements View.OnClickListener,
       if (sndGameOver != 0) {
         spSounds.play(sndGameOver, 1, 1, 0, 0, 1);
       }
-      
-      if (vib != null) {
-        vib.vibrate(VIBRATE_DURATION);  
+
+      if (vib != null && isVibratorOn) {
+        vib.vibrate(VIBRATE_DURATION * 2);
       }
       isTimerRunning = false;
       isTimerReset = true;
       cmTimer.stop();
       cmTimer.setText("00:00");
       Log.e(LOG_TAG, "45 minute timer");
+    }
+  }
+
+  @Override
+  public void onScrollStateChange(NumberPicker view, int scrollState) {
+    // disallow a game length of 0
+    if (scrollState == NumberPicker.OnScrollListener.SCROLL_STATE_IDLE) {
+      if (npGameTenInd.getValue() == 0 && npGameMinInd.getValue() == 0) {
+        alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+      } else if (!alert.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled()) {
+        alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+      }
     }
   }
 
@@ -483,7 +531,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
    */
   @Override
   protected void onDestroy() {
-    // TODO Auto-generated method stub
     super.onDestroy();
     Log.e(LOG_TAG, "onDestroy");
     clearSharedPrefs();
@@ -545,17 +592,5 @@ public class MainActivity extends Activity implements View.OnClickListener,
     this.gameLength = gameLength;
     this.tvGameLength.setText(gameLength + ":00");
   }
-/*
-  @Override
-  public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-    Log.e(LOG_TAG, "ten: "+npGameTenInd.getValue());
-    Log.e(LOG_TAG, "min: " +npGameMinInd.getValue());
-    if(npGameTenInd.getValue() == 0 && npGameMinInd.getValue() == 0){
-      alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);  
-    } else if (!alert.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled() ){
-      alert.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);  
-    }
-    
-  }*/
 
 }
