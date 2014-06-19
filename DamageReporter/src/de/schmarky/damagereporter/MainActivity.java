@@ -119,7 +119,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     long base;
     // make sure the first click starts at 00:00
     if (isTimerReset) {
-      Log.e(LOG_TAG, "start after reset");
       cmTimer.setBase(SystemClock.elapsedRealtime());
       cmTimer.start();
       isTimerReset = false;
@@ -135,11 +134,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
       // get the base time
       if (baseTime != 0L) {
         base = baseTime;
-        Log.e(LOG_TAG, "start after resume");
-        Log.e(LOG_TAG, "resume Diff: " + (pausedTime - baseTime));
       } else {
         base = cmTimer.getBase();
-        Log.e(LOG_TAG, "start after pause");
       }
       cmTimer.setBase((SystemClock.elapsedRealtime() - (pausedTime - base)));
       cmTimer.start();
@@ -161,7 +157,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
   private void setTimerFromSharedPrefs() {
     String Time;
-    Log.e(LOG_TAG, "setTimerFromSharedPrefs");
     // get shared prefs
     // someData = getSharedPreferences(FILE_NAME, MODE_PRIVATE);
     // get the saved time string
@@ -169,30 +164,25 @@ public class MainActivity extends Activity implements View.OnClickListener,
     // game length
     if (someData.contains(GAME_LENGTH_TIME)) {
       setGameLength(someData.getInt(GAME_LENGTH_TIME, GAME_DEFAULT_LENGTH));
-      Log.e(LOG_TAG, "gameLength: " + getGameLength());
     }
     
     // vibrator setting
     if (someData.contains(VIBRATOR_STATE)) {
       isVibratorOn = someData.getBoolean(VIBRATOR_STATE, true);
-      Log.e(LOG_TAG, "get vibrator state:" + isVibratorOn);
     }
     
     // current time
     if (someData.contains(TIME_DISP_STR)) {
       Time = someData.getString(TIME_DISP_STR, "00:00");
-      Log.e(LOG_TAG, "TimeStr: " + Time);
       cmTimer.setText(Time);
     }
     // fill globals from shared prefs
     if (someData.contains(TIMER_PAUSED_TIME)) {
       pausedTime = someData.getLong(TIMER_PAUSED_TIME, 0);
-      Log.e(LOG_TAG, "pause: " + pausedTime);
     }
 
     if (someData.contains(TIMER_BASE_TIME)) {
       baseTime = someData.getLong(TIMER_BASE_TIME, 0);
-      Log.e(LOG_TAG, "base: " + baseTime);
     }
     // clear after data has been retrieved
     clearSharedPrefs();
@@ -202,24 +192,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     Long pTime;
     Long bTime;
 
-    // logging
-    Log.e(LOG_TAG, "setTimerToSharedPrefs");
-    Log.e(LOG_TAG, "base Time: " + cmTimer.getBase());
-    Log.e(LOG_TAG, "Paused Time: " + pausedTime);
-    Log.e(LOG_TAG, "TimeString: " + cmTimer.getText().toString());
-
     // get shared prefs
     SharedPreferences.Editor editor = someData.edit();
 
     // game length
     if (!someData.contains(GAME_LENGTH_TIME)) {
-      Log.e(LOG_TAG, "put gameover time:" + getGameLength());
       editor.putInt(GAME_LENGTH_TIME, getGameLength());
     }
     
     // vibrator setting
     if (!someData.contains(VIBRATOR_STATE)) {
-      Log.e(LOG_TAG, "put vibrator state:" + isVibratorOn);
       editor.putBoolean(VIBRATOR_STATE, isVibratorOn);
     }
     
@@ -252,10 +234,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
       // is the timer currently paused
       if (pausedTime != 0L) {
-        Log.e(LOG_TAG, "put pause time");
         pTime = pausedTime;
       } else { // or not
-        Log.e(LOG_TAG, "put elapsedRealtime");
         pTime = SystemClock.elapsedRealtime();
       }
 
@@ -269,7 +249,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   }
 
   private void clearSharedPrefs() {
-    Log.e(LOG_TAG, "clearSharedPrefs");
     // clean up shared preferences
     SharedPreferences.Editor editor = someData.edit();
     editor.clear();
@@ -279,7 +258,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   protected void initNumberPicker(View promptsView) {
     String gL;
     int digit;
-    Log.e("LOG_TAG", "initNumberPicker()");
 
     npGameTenInd = (NumberPicker) promptsView.findViewById(R.id.npGameTenInd);
     npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
@@ -316,11 +294,18 @@ public class MainActivity extends Activity implements View.OnClickListener,
     initNumberPicker(promptsView);
 
     cbVibrate = (CheckBox) promptsView.findViewById(R.id.cbVibrate);
-    cbVibrate.setChecked(isVibratorOn);
+    if(vib.hasVibrator()){
+      cbVibrate.setChecked(isVibratorOn);  
+    } else {
+      isVibratorOn = false;
+      cbVibrate.setChecked(false);
+      cbVibrate.setEnabled(false);
+    }
+    
 
     // set prompts.xml to alertdialog builder
     alert.setView(promptsView);
-    alert.setTitle("Set Game length");
+    alert.setTitle("Settings");
     alert.setButton(AlertDialog.BUTTON_POSITIVE, "OK", this);
     alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", this);
     alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Defaults", this);
@@ -349,7 +334,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     case AlertDialog.BUTTON_NEUTRAL:
       // set game length to default(45min) and close the settings dialog
       setGameLength(GAME_DEFAULT_LENGTH);
-      isVibratorOn = true;
+      if(!vib.hasVibrator()){
+        isVibratorOn = false;  
+      }else{
+        isVibratorOn = true;  
+      } 
       break;
     case AlertDialog.BUTTON_NEGATIVE:
       // do nothing and close the settings dialog
@@ -358,7 +347,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
       int newVal;
       // get the values from the number picker
       newVal = (npGameTenInd.getValue() * 10) + npGameMinInd.getValue();
-      Log.e(LOG_TAG, "newVal: " + newVal);
       // set the game length and close the settings dialog
       setGameLength(newVal);
       if (cbVibrate.isChecked()) {
@@ -378,8 +366,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     chronoText = chronometer.getText().toString();
     array = chronoText.split(":");
-    // Log.e(LOG_TAG, "arra0: "+array[0]);
-    // Log.e(LOG_TAG, "arra1: "+array[1]);
     minutes = Integer.parseInt(array[0]);
     seconds = Integer.parseInt(array[1]);
 
@@ -394,7 +380,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
       }
       // Toast.makeText(getApplicationContext(),
       // "3 Minute timer",Toast.LENGTH_SHORT).show();
-      Log.e(LOG_TAG, "3 minute timer");
 
     } else if (minutes == getGameLength()) {
       // play time is up sound + game over graphic
@@ -409,7 +394,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
       isTimerReset = true;
       cmTimer.stop();
       cmTimer.setText("00:00");
-      Log.e(LOG_TAG, "45 minute timer");
     }
   }
 
@@ -485,7 +469,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     super.onConfigurationChanged(newConfig);
-    Log.e(LOG_TAG, "onConfigurationChanged()");
   }
 
   /*
@@ -496,7 +479,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Log.e(LOG_TAG, "onCreate");
     init();
   }
 
@@ -508,7 +490,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   @Override
   protected void onResume() {
     super.onResume();
-    Log.e(LOG_TAG, "OnResume()");
     setTimerFromSharedPrefs();
   }
 
@@ -520,7 +501,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   @Override
   protected void onPause() {
     super.onPause();
-    Log.e(LOG_TAG, "OnPause()");
     setTimerToSharedPrefs();
   }
 
@@ -532,7 +512,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    Log.e(LOG_TAG, "onDestroy");
     clearSharedPrefs();
     setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE);
   }
@@ -546,7 +525,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   protected void onRestart() {
     // TODO Auto-generated method stub
     super.onRestart();
-    Log.e(LOG_TAG, "onRestart");
   }
 
   /*
@@ -558,7 +536,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   protected void onStart() {
     // TODO Auto-generated method stub
     super.onStart();
-    Log.e(LOG_TAG, "onStart");
   }
 
   /*
@@ -570,7 +547,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
   protected void onStop() {
     // TODO Auto-generated method stub
     super.onStop();
-    Log.e(LOG_TAG, "onStop");
   }
 
   /*
