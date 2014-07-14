@@ -1,76 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp" >
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <TextView
+        android:id="@+id/tvSettings"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="horizontal" >
+        android:text="@string/settings"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="100" >
+
+        <TextView
+            android:id="@+id/tvGameLength"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:orientation="vertical" >
+            android:layout_weight="60"
+            android:text="@string/game_length" />
 
-            <TextView
-                android:id="@+id/tvGameLength"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/game_length"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" >
-
-                <NumberPicker
-                    android:id="@+id/npGameTenInd"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:descendantFocusability="blocksDescendants" />
-
-                <NumberPicker
-                    android:id="@+id/npGameMinInd"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:descendantFocusability="blocksDescendants" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="fill_parent"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:background="@android:color/darker_gray" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/etGameLength"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:orientation="vertical" >
+            android:layout_weight="40"
+            android:imeOptions="actionDone"
+            android:inputType="time" />
+    </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvSettings"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/Alarm"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100" >
 
-            <CheckBox
-                android:id="@+id/cbVibrate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:text="@string/vibrate"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
+        <TextView
+            android:id="@+id/tvReportLength"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="60"
+            android:text="@string/report_length" />
 
-        </LinearLayout>
+        <EditText
+            android:id="@+id/etReportLength"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="40"
+            android:imeOptions="actionDone"
+            android:inputType="time" >
+        </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100" >
+
+        <TextView
+            android:id="@+id/tvAlarm"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="60"
+            android:text="@string/alarm" />
+
+        <CheckBox
+            android:id="@+id/cbVibrate"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="40"
+            android:text="@string/vibrate"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
     </LinearLayout>
 
 </LinearLayout>

@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">DamageReporter</string>
+    <string name="app_name">Damage Reporter</string>
     <string name="action_settings">Settings</string>
+    <string name="action_settings2">Settings2</string>
     <string name="action_about">About</string>
     <string name="about">This is an inoffical timer app for the boardgame Damage Report by Break from Reality Games.\nhttp://www.bfrgames.com/\n\nGraphics:\nBackgound: Break from Reality Games\nIcon: David Vignoni - http://www.icon-king.com/\n\nImplementation:\nschmarky - https://github.com/schmarky/DamageReporter</string>
     <string name="startpause">Start/Pause</string>
     <string name="reset">Reset</string>
     <string name="game_length"><u>Game Length</u></string>
+    <string name="report_length"><u>Report Length</u></string>
     <string name="vibrate">Vibrate</string>
-    <string name="Alarm"><u>Alarm</u></string>
+    <string name="alarm"><u>Alarm</u></string>
+    <string name="settings"><u>Settings</u></string>
 
 </resources>

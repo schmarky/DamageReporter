@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:orientation="horizontal"
+    android:padding="10dp" >
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginRight="5dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/tvGLength"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/game_length"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" >
+
+            <NumberPicker
+                android:id="@+id/npGameTenInd"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:descendantFocusability="blocksDescendants" />
+
+            <NumberPicker
+                android:id="@+id/npGameMinInd"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:descendantFocusability="blocksDescendants" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="5dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/tvRepLength"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/report_length"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <NumberPicker
+            android:id="@+id/npReportInd"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:descendantFocusability="blocksDescendants" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="5dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/tvSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/alarm"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <CheckBox
+            android:id="@+id/cbVibrate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:text="@string/vibrate"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+    </LinearLayout>
+
+</LinearLayout>

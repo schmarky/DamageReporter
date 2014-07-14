@@ -35,12 +35,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
   private static final String TIMER_PAUSED_TIME = "PausedTime";
   private static final String TIME_DISP_STR = "TimeDispStr";
   private static final String GAME_LENGTH_TIME = "GameLengthTime";
+  private static final String REPORT_LENGTH_TIME = "ReportLengthTime";
   private static final String VIBRATOR_STATE = "VibratorState";
   private static final String TIMER_BASE_TIME = "base";
   private static final String LOG_TAG = "Damage_Reporter";
   private static final String FILE_NAME = "MySharedPrefs";
   private static final int DAMAGE_REPORT_DEFAULT_LENGTH = 3;
   private static final int GAME_DEFAULT_LENGTH = 45;
+  private static final int SETTINGS_DATA = 0;
   private static final long VIBRATE_DURATION = 1000;
 
   // globals
@@ -62,6 +64,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   Chronometer cmTimer;
   SoundPool spSounds;
   TextView tvGameLength;
+  TextView tvReportLength;
   Vibrator vib;
   AlertDialog alert;
   CheckBox cbVibrate;
@@ -69,6 +72,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
   // Settings Objects
   NumberPicker npGameTenInd;
   NumberPicker npGameMinInd;
+  NumberPicker npReportInd;
 
   // NumberPicker npRepMinutes;
 
@@ -84,6 +88,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     bStart = (Button) findViewById(R.id.bStart);
     bReset = (Button) findViewById(R.id.bReset);
     tvGameLength = (TextView) findViewById(R.id.tvGameLength);
+    tvReportLength = (TextView) findViewById(R.id.tvReportLength);
     spSounds = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
     sndDmgReport = spSounds.load(this, R.raw.damagereport, 1);
     sndGameOver = spSounds.load(this, R.raw.gameover, 1);
@@ -98,6 +103,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     cmTimer.setOnChronometerTickListener(this);
     // Game Length TextView
     tvGameLength.setOnClickListener(this);
+    tvReportLength.setOnClickListener(this);
     // make volume buttons work
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
   }
@@ -166,6 +172,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
       setGameLength(someData.getInt(GAME_LENGTH_TIME, GAME_DEFAULT_LENGTH));
     }
     
+    // game length
+    if (someData.contains(REPORT_LENGTH_TIME)) {
+      setDmgReportLength(someData.getInt(REPORT_LENGTH_TIME, DAMAGE_REPORT_DEFAULT_LENGTH ));
+    }
+
     // vibrator setting
     if (someData.contains(VIBRATOR_STATE)) {
       isVibratorOn = someData.getBoolean(VIBRATOR_STATE, true);
@@ -199,6 +210,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     if (!someData.contains(GAME_LENGTH_TIME)) {
       editor.putInt(GAME_LENGTH_TIME, getGameLength());
     }
+    
+    // report length
+    if (!someData.contains(REPORT_LENGTH_TIME)) {
+      editor.putInt(REPORT_LENGTH_TIME, getDmgReportLength());
+    }  
     
     // vibrator setting
     if (!someData.contains(VIBRATOR_STATE)) {
@@ -261,7 +277,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     npGameTenInd = (NumberPicker) promptsView.findViewById(R.id.npGameTenInd);
     npGameMinInd = (NumberPicker) promptsView.findViewById(R.id.npGameMinInd);
-
+    npReportInd = (NumberPicker) promptsView.findViewById(R.id.npReportInd);
+    
     npGameTenInd.setOnScrollListener(this);
     npGameTenInd.setMaxValue(4);
     npGameTenInd.setMinValue(0);
@@ -273,6 +290,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
     npGameMinInd.setMinValue(0);
     npGameMinInd.setWrapSelectorWheel(true);
 
+    npReportInd.setMaxValue(9);
+    npReportInd.setMinValue(1);
+    npReportInd.setWrapSelectorWheel(true);
+    npReportInd.setValue(getDmgReportLength());
+    
     // get the minutes
     gL = Integer.toString(getGameLength());
     if (gL.length() > 1) {
@@ -287,7 +309,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     LayoutInflater inflater = (LayoutInflater) this
         .getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
 
-    View promptsView = inflater.inflate(R.layout.settings, null);
+    View promptsView = inflater.inflate(R.layout.settings_old, null);
 
     alert = new AlertDialog.Builder(MainActivity.this).create();
 
@@ -312,6 +334,31 @@ public class MainActivity extends Activity implements View.OnClickListener,
     alert.show();
   }
 
+  /* (non-Javadoc)
+   * @see android.app.Activity#onActivityResult(int, int, android.content.Intent)
+   */
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Log.e(LOG_TAG,"onActivityResult");
+    Log.e(LOG_TAG,"requestCode"+ requestCode);
+    Log.e(LOG_TAG,"resultCode" + resultCode);
+    super.onActivityResult(requestCode, resultCode, data);
+    if(resultCode == RESULT_OK && requestCode == SETTINGS_DATA){
+      Log.e(LOG_TAG,"ActivityResult OK");
+      
+      // get passed settings for this intent
+      Bundle b = data.getExtras();
+      //boolean hasVibrator = b.getBoolean("hasVibrator");
+      String gameLength = b.getString("gameLength");
+      String reportLength = b.getString("reportLength");
+      
+      gameLength = data.getStringExtra("gameLength");
+      
+      Log.e(LOG_TAG, "result: "+ gameLength);
+      Log.e(LOG_TAG, "result: "+ reportLength);
+    }
+  }
+  
   @Override
   public void onClick(View view) {
     switch (view.getId()) {
@@ -325,6 +372,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
       pauseTimer();
       initSettingsDialog();
       break;
+    case R.id.tvReportLength:
+      pauseTimer();
+      initSettingsDialog();
+      break;
     }
   }
 
@@ -334,6 +385,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     case AlertDialog.BUTTON_NEUTRAL:
       // set game length to default(45min) and close the settings dialog
       setGameLength(GAME_DEFAULT_LENGTH);
+      setDmgReportLength(DAMAGE_REPORT_DEFAULT_LENGTH);
       if(!vib.hasVibrator()){
         isVibratorOn = false;  
       }else{
@@ -344,11 +396,14 @@ public class MainActivity extends Activity implements View.OnClickListener,
       // do nothing and close the settings dialog
       break;
     case AlertDialog.BUTTON_POSITIVE:
-      int newVal;
+      int newGameLength;
+      int newReportLength;
       // get the values from the number picker
-      newVal = (npGameTenInd.getValue() * 10) + npGameMinInd.getValue();
+      newGameLength = (npGameTenInd.getValue() * 10) + npGameMinInd.getValue();
+      newReportLength = (npReportInd.getValue());
       // set the game length and close the settings dialog
-      setGameLength(newVal);
+      setGameLength(newGameLength);
+      setDmgReportLength(newReportLength);
       if (cbVibrate.isChecked()) {
         isVibratorOn = true;
       } else {
@@ -369,7 +424,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     minutes = Integer.parseInt(array[0]);
     seconds = Integer.parseInt(array[1]);
 
-    if ((minutes % dmgReportLength) == 0 & (seconds == 0) & minutes != 0) {
+    if ((minutes % getDmgReportLength()) == 0 & (seconds == 0) & minutes != 0) {
       // play damage report sound + maybe screen flash
       if (sndDmgReport != 0) {
         spSounds.play(sndDmgReport, 1, 1, 0, 0, 1);
@@ -433,6 +488,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     case R.id.action_settings:
       pauseTimer();
       initSettingsDialog();
+      return true;
+    case R.id.action_settings2:
+      pauseTimer();
+      Intent newIntent = new Intent("de.schmarky.damagereporter.SETTINGS");
+      // vibrator present?
+      newIntent.putExtra("hasVibrator", vib.hasVibrator());
+      newIntent.putExtra("gameLength", getGameLength());
+      newIntent.putExtra("reportLength", getDmgReportLength());
+      startActivityForResult(newIntent, SETTINGS_DATA);
+      // start activity for result
       return true;
     default:
       return super.onOptionsItemSelected(item);
@@ -569,4 +634,19 @@ public class MainActivity extends Activity implements View.OnClickListener,
     this.tvGameLength.setText(gameLength + ":00");
   }
 
+  /**
+   * @return the dmgReportLength
+   */
+  public int getDmgReportLength() {
+    return dmgReportLength;
+  }
+
+  /**
+   * @param dmgReportLength the dmgReportLength to set
+   */
+  public void setDmgReportLength(int dmgReportLength) {
+    this.dmgReportLength = dmgReportLength;
+    this.tvReportLength.setText(dmgReportLength + ":00");
+  }
+  
 }
